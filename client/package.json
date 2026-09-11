@@ -22,7 +22,7 @@
     "react-helmet": "^6.1.0",
     "react-loading": "^2.0.3",
     "remixicon": "^4.2.0",
-    "rin-server": "workspace:../server",
+    "rin-server": "workspace:*",
     "typescript-cookie": "^1.0.6",
     "wouter": "^3.1.3"
   },
