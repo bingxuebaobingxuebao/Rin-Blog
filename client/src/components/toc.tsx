@@ -49,6 +49,11 @@ export function Toc({ container = "article .wmde-markdown", deps }: { container?
                     if (!el) continue
                     if (el.getBoundingClientRect().top <= 100) current = it.id
                 }
+                // 已经是页面最底部时，最后几个标题永远滚不到阈值以上，
+                // 这时直接把最后一项视为当前项，否则点最后一项高亮会停在上一条。
+                if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+                    current = items[items.length - 1].id
+                }
                 setActive(current)
             })
         }
