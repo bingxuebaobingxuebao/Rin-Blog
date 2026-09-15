@@ -11,6 +11,7 @@ import { FriendsPage } from './page/friends'
 import { TagPage } from './page/tag'
 import { TagsPage } from './page/tags'
 import { WritingPage } from './page/writing'
+import { useI18n } from './state/i18n'
 import { Profile, ProfileContext } from './state/profile'
 import { headersWithAuth } from './utils/auth'
 function App() {
@@ -80,11 +81,16 @@ function App() {
           </RouteMe>
 
           {/* Default route in a switch */}
-          <Route>404: No such page!</Route>
+          <Route><NotFound /></Route>
         </Switch>
       </ProfileContext.Provider>
     </>
   )
+}
+
+function NotFound() {
+  const { t } = useI18n()
+  return <>{t('app.notFound')}</>
 }
 
 function RouteMe<

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Checkbox, Input } from '../components/input';
 import { Padding } from '../components/padding';
 import { client } from '../main';
+import { tErrGlobal, tGlobal, useI18n } from '../state/i18n';
 import { headersWithAuth } from '../utils/auth';
 
 async function publish({ title, alias, listed, content, summary, tags, draft }: { title: string, listed: boolean, content: string, summary: string, tags: string[], draft: boolean, alias?: string }) {
@@ -20,10 +21,10 @@ async function publish({ title, alias, listed, content, summary, tags, draft }: 
     headers: headersWithAuth()
   })
   if (error) {
-    alert(error.value)
+    alert(tErrGlobal(error.value))
   }
   if (data && typeof data != 'string') {
-    alert('发布成功')
+    alert(tGlobal('write.published'))
     Cache.with().clear()
     window.location.href = '/feed/' + data.insertedId
   }
@@ -42,9 +43,9 @@ async function update({ id, title, alias, content, summary, tags, listed, draft 
     headers: headersWithAuth()
   })
   if (error) {
-    alert(error.value)
+    alert(tErrGlobal(error.value))
   } else {
-    alert('更新成功')
+    alert(tGlobal('write.updated'))
     Cache.with(id).clear()
     window.location.href = '/feed/' + id
   }
@@ -58,7 +59,7 @@ function uploadImage(file: File, onSuccess: (url: string) => void) {
     headers: headersWithAuth()
   }).then(({ data, error }) => {
     if (error) {
-      alert('上传失败' + error.value)
+      alert(tGlobal('write.uploadFailed') + tErrGlobal(error.value))
     }
     if (data) {
       onSuccess(data)
@@ -66,7 +67,7 @@ function uploadImage(file: File, onSuccess: (url: string) => void) {
   })
     .catch((e: any) => {
       console.error(e)
-      alert('上传失败' + e.message)
+      alert(tGlobal('write.uploadFailed') + e.message)
     })
 }
 
@@ -92,7 +93,7 @@ function uploadImageButton() {
   const upChange = (event: any) => {
     let imgfile = event.currentTarget.files[0];///获得input的第一个图片
     if (imgfile.size > 5 * 1024000) {
-      alert('图片不能超过 5MB')
+      alert(tGlobal('write.tooLarge'))
       uploadRef.current!.value = ''
     }
     else {
@@ -135,17 +136,18 @@ export function WritingPage({ id }: { id?: number }) {
   const [draft, setDraft] = useState(false)
   const [listed, setListed] = useState(true)
   const [content, setContent] = useState<string>(cache.get("content") ?? "")
+  const { t } = useI18n()
   function publishButton() {
     const tagsplit = tags.split('#').filter(tag => tag !== '').map(tag => tag.trim()) || []
     if (id != undefined) {
       update({ id, title, content, summary, alias, tags: tagsplit, draft, listed })
     } else {
       if (!title) {
-        alert('标题不能为空')
+        alert(t('err.Title is required'))
         return
       }
       if (!content) {
-        alert('内容不能为空')
+        alert(t('err.Content is required'))
         return
       }
       publish({ title, content, summary, tags: tagsplit, draft, alias, listed })
@@ -197,17 +199,17 @@ export function WritingPage({ id }: { id?: number }) {
         <div className='writeauto xl:basis-11/12 pb-8'>
           <div className='bg-w rounded-2xl shadow-xl shadow-color p-4'>
             <div className='visible md:hidden mb-8'>
-              <Input id={id} name="title" value={title} setValue={setTitle} placeholder='标题' />
-              <Input id={id} name="summary" value={summary} setValue={setSummary} placeholder='摘要' className='mt-4' />
-              <Input id={id} name="tags" value={tags} setValue={setTags} placeholder='标签' className='mt-4' />
-              <Input id={id} name="alias" value={alias} setValue={setAlias} placeholder='别名' className='mt-4' />
+              <Input id={id} name="title" value={title} setValue={setTitle} placeholder={t('write.title')} />
+              <Input id={id} name="summary" value={summary} setValue={setSummary} placeholder={t('write.summary')} className='mt-4' />
+              <Input id={id} name="tags" value={tags} setValue={setTags} placeholder={t('write.tags')} className='mt-4' />
+              <Input id={id} name="alias" value={alias} setValue={setAlias} placeholder={t('write.alias')} className='mt-4' />
               <div className='select-none flex flex-row justify-between items-center mt-6 mb-2 px-4' onClick={() => setDraft(!draft)}>
-                <p>仅自己可见</p>
-                <Checkbox id="draft" value={draft} setValue={setDraft} placeholder='草稿' />
+                <p>{t('write.draft')}</p>
+                <Checkbox id="draft" value={draft} setValue={setDraft} placeholder={t('write.draft')} />
               </div>
               <div className='select-none flex flex-row justify-between items-center mt-6 mb-2 px-4' onClick={() => setListed(!listed)}>
-                <p>列出在文章中</p>
-                <Checkbox id="listed" value={listed} setValue={setListed} placeholder='列出' />
+                <p>{t('write.listed')}</p>
+                <Checkbox id="listed" value={listed} setValue={setListed} placeholder={t('write.listed')} />
               </div>
             </div>
             <div className='mx-4 my-2 md:mx-0 md:my-0'>
@@ -223,27 +225,27 @@ export function WritingPage({ id }: { id?: number }) {
             </div>
           </div>
           <div className='visible md:hidden flex flex-row justify-center mt-8'>
-            <button onClick={publishButton} className='basis-1/2 bg-theme text-white py-4 rounded-full shadow-xl shadow-color'>发布</button>
+            <button onClick={publishButton} className='basis-1/2 bg-theme text-white py-4 rounded-full shadow-xl shadow-color'>{t('write.publish')}</button>
           </div>
         </div>
         <div className='hidden md:visible basis-1/2 md:basis-1/4 md:flex flex-col'>
           <div className='fixed'>
             <div className='bg-w rounded-2xl shadow-xl shadow-color p-4 my-8 mx-8'>
-              <Input id={id} name="title" value={title} setValue={setTitle} placeholder='标题' />
-              <Input id={id} name="summary" value={summary} setValue={setSummary} placeholder='摘要' className='mt-4' />
-              <Input id={id} name="tags" value={tags} setValue={setTags} placeholder='标签' className='mt-4' />
-              <Input id={id} name="alias" value={alias} setValue={setAlias} placeholder='别名' className='mt-4' />
+              <Input id={id} name="title" value={title} setValue={setTitle} placeholder={t('write.title')} />
+              <Input id={id} name="summary" value={summary} setValue={setSummary} placeholder={t('write.summary')} className='mt-4' />
+              <Input id={id} name="tags" value={tags} setValue={setTags} placeholder={t('write.tags')} className='mt-4' />
+              <Input id={id} name="alias" value={alias} setValue={setAlias} placeholder={t('write.alias')} className='mt-4' />
               <div className='select-none flex flex-row justify-between items-center mt-6 mb-2 px-4' onClick={() => setDraft(!draft)}>
-                <p>仅自己可见</p>
-                <Checkbox id="draft" value={draft} setValue={setDraft} placeholder='草稿' />
+                <p>{t('write.draft')}</p>
+                <Checkbox id="draft" value={draft} setValue={setDraft} placeholder={t('write.draft')} />
               </div>
               <div className='select-none flex flex-row justify-between items-center mt-6 mb-2 px-4' onClick={() => setListed(!listed)}>
-                <p>列出在文章中</p>
-                <Checkbox id="listed" value={listed} setValue={setListed} placeholder='列出' />
+                <p>{t('write.listed')}</p>
+                <Checkbox id="listed" value={listed} setValue={setListed} placeholder={t('write.listed')} />
               </div>
             </div>
             <div className='flex flex-row justify-center'>
-              <button onClick={publishButton} className='basis-1/2 bg-theme text-white py-4 rounded-full shadow-xl shadow-color'>发布</button>
+              <button onClick={publishButton} className='basis-1/2 bg-theme text-white py-4 rounded-full shadow-xl shadow-color'>{t('write.publish')}</button>
             </div>
           </div>
         </div>

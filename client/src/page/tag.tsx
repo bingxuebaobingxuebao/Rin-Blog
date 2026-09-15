@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { FeedCard } from "../components/feed_card";
 import { Waiting } from "../components/loading";
 import { endpoint } from "../main";
+import { useI18n } from "../state/i18n";
 
 type FeedItem = {
     id: number;
@@ -20,6 +21,7 @@ type FeedItem = {
  * 所以还要按 id 逐个取 `GET /feed/:id` 才拿得到标题和摘要。
  */
 export function TagPage({ name }: { name: string }) {
+    const { t } = useI18n();
     // wouter 对动态段是否解码不确定，这里做一次防御性解码，避免中文标签名被双重编码
     let tagName = name
     try { tagName = decodeURIComponent(name) } catch { tagName = name }
@@ -53,8 +55,8 @@ export function TagPage({ name }: { name: string }) {
             .catch(e => {
                 if (!alive) return
                 setError(String(e?.message) === '404'
-                    ? `没有找到标签「${tagName}」`
-                    : "标签加载失败：" + String(e?.message || e))
+                    ? t("tags.notFound", tagName)
+                    : `${t("tags.loadFailed")}: ${String(e?.message || e)}`)
             })
         return () => { alive = false }
     }, [tagName])
@@ -64,14 +66,14 @@ export function TagPage({ name }: { name: string }) {
             <div className="w-full flex flex-col justify-center items-center mb-8">
                 <div className="wauto text-start text-black dark:text-white p-4">
                     <Link href="/tags" className="text-sm text-neutral-500 font-normal duration-300 hover:text-theme">
-                        <i className="ri-arrow-left-line mr-1"></i>全部标签
+                        <i className="ri-arrow-left-line mr-1"></i>{t("tags.all")}
                     </Link>
                     <p className="mt-2 text-4xl font-bold">
                         <i className="ri-hashtag text-neutral-400"></i>{tagName}
                     </p>
                     <div className="flex flex-row justify-between">
                         <p className="text-sm mt-4 text-neutral-500 font-normal">
-                            共有 {feeds?.length ?? 0} 篇文章
+                            {t("tags.feedCount", feeds?.length ?? 0)}
                         </p>
                     </div>
                 </div>
@@ -79,7 +81,7 @@ export function TagPage({ name }: { name: string }) {
                     <div className="wauto rounded-2xl bg-w m-2 p-6 items-center justify-center flex flex-col">
                         <h1 className="text-xl font-bold t-primary">{error}</h1>
                         <button className="mt-2 bg-theme text-white px-4 py-2 rounded-full" onClick={() => window.location.href = '/tags'}>
-                            返回全部标签
+                            {t("tags.all")}
                         </button>
                     </div>}
                 {feeds?.map(({ id, ...feed }) => (

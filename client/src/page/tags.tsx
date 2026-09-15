@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { Waiting } from "../components/loading";
 import { endpoint } from "../main";
+import { useI18n } from "../state/i18n";
 
 type TagInfo = {
     id: number;
@@ -15,6 +16,7 @@ type TagInfo = {
  * 这里刻意不用 Eden client：`client.tag.get()` 会被序列化成 `/tag/index`，而服务端只注册了 `/tag`。
  */
 export function TagsPage() {
+    const { t } = useI18n();
     const [tags, setTags] = useState<TagInfo[]>()
     const [counts, setCounts] = useState<Record<string, number>>({})
     const [error, setError] = useState<string>()
@@ -41,7 +43,7 @@ export function TagsPage() {
             setTags(Array.isArray(tagList) ? tagList : [])
         }).catch(e => {
             if (!alive) return
-            setError("标签加载失败：" + String(e?.message || e))
+            setError(String(e?.message || e))
         })
         return () => { alive = false }
     }, [])
@@ -50,16 +52,16 @@ export function TagsPage() {
         <Waiting wait={tags || error}>
             <div className="w-full flex flex-col justify-center items-center mb-8">
                 <div className="wauto text-start text-black dark:text-white p-4 text-4xl font-bold">
-                    <p>标签</p>
+                    <p>{t("tags.title")}</p>
                     <p className="text-sm mt-4 text-neutral-500 font-normal">
-                        共 {tags?.length ?? 0} 个标签
+                        {t("tags.count", tags?.length ?? 0)}
                     </p>
                 </div>
                 {error &&
                     <div className="wauto rounded-2xl bg-w m-2 p-6 items-center justify-center flex flex-col">
-                        <h1 className="text-xl font-bold t-primary">{error}</h1>
+                        <h1 className="text-xl font-bold t-primary">{t("tags.loadFailed")}: {error}</h1>
                         <button className="mt-2 bg-theme text-white px-4 py-2 rounded-full" onClick={() => window.location.reload()}>
-                            重新加载
+                            {t("common.reload")}
                         </button>
                     </div>}
                 <div className="wauto flex flex-row flex-wrap p-2">
@@ -69,7 +71,7 @@ export function TagsPage() {
                             <i className="ri-hashtag mr-1 text-neutral-400"></i>
                             <span className="text-base font-medium">{tag.name}</span>
                             {counts[tag.name] !== undefined &&
-                                <span className="ml-2 text-xs text-neutral-400">{counts[tag.name]} 篇</span>}
+                                <span className="ml-2 text-xs text-neutral-400">{t("tags.perTag", counts[tag.name])}</span>}
                         </Link>
                     ))}
                 </div>

@@ -2,22 +2,24 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { removeCookie } from "typescript-cookie";
 import { Link, useLocation } from "wouter";
 import { oauth_url } from "../main";
+import { LANGS, useI18n } from "../state/i18n";
 import { Profile, ProfileContext } from "../state/profile";
 import { Icon } from "./icon";
+import { LangSwitcher } from "./lang";
 
 /**
  * 导航栏布局对齐上游新版 Rin（xeu.life）：
  * - 整条通栏、透明无胶囊；顶部那层主题色渐变由 App.tsx 里的 fixed 元素提供
- * - 宽屏（>=768px）：站名在左，菜单纯文字靠右，最右是图标按钮
- * - 窄屏（<768px）：菜单折叠成右侧「三条杠」，点开是下拉抽屉
+ * - 宽屏（>=768px）：站名在左，菜单纯文字靠右，最右是「语言 + 图标按钮」
+ * - 窄屏（<768px）：菜单折叠成右侧「三条杠」，点开是下拉抽屉（语言在里面铺开成标签）
  */
-type NavEntry = { title: string, herf: string, isActive: (location: string) => boolean }
+type NavEntry = { titleKey: string, herf: string, isActive: (location: string) => boolean }
 
-const NAV_ITEMS: NavEntry[] = [
-    { title: "文章", herf: "/", isActive: l => l === "/" || l.startsWith("/feed") },
-    { title: "标签", herf: "/tags", isActive: l => l === "/tags" || l.startsWith("/tag/") },
-    { title: "朋友们", herf: "/friends", isActive: l => l === "/friends" },
-    { title: "关于", herf: "/about", isActive: l => l === "/about" },
+const NAV_KEYS: NavEntry[] = [
+    { titleKey: "nav.articles", herf: "/", isActive: l => l === "/" || l.startsWith("/feed") },
+    { titleKey: "nav.tags", herf: "/tags", isActive: l => l === "/tags" || l.startsWith("/tag/") },
+    { titleKey: "nav.friends", herf: "/friends", isActive: l => l === "/friends" },
+    { titleKey: "nav.about", herf: "/about", isActive: l => l === "/about" },
 ]
 
 export function Header() {
@@ -25,6 +27,7 @@ export function Header() {
     const [location, _] = useLocation();
     const [menuOpen, setMenuOpen] = useState(false);
     const rightRef = useRef<HTMLDivElement>(null);
+    const { t, lang, setLang } = useI18n();
 
     // 换页就把抽屉收起来
     useEffect(() => { setMenuOpen(false) }, [location]);
@@ -42,11 +45,11 @@ export function Header() {
     }, [menuOpen])
 
     const items: NavEntry[] = [
-        NAV_ITEMS[0],
+        NAV_KEYS[0],
         ...(profile?.permission
-            ? [{ title: "写作", herf: "/writing", isActive: (l: string) => l.startsWith("/writing") }]
+            ? [{ titleKey: "nav.write", herf: "/writing", isActive: (l: string) => l.startsWith("/writing") }]
             : []),
-        ...NAV_ITEMS.slice(1),
+        ...NAV_KEYS.slice(1),
     ]
 
     function logout() {
@@ -79,18 +82,19 @@ export function Header() {
                                 <div className="hidden min-w-0 items-center justify-end md:flex">
                                     <div className="flex min-w-max items-center overflow-x-auto text-sm">
                                         {items.map(item => (
-                                            <NavItem key={item.herf} title={item.title} herf={item.herf} selected={item.isActive(location)} />
+                                            <NavItem key={item.herf} title={t(item.titleKey)} herf={item.herf} selected={item.isActive(location)} />
                                         ))}
                                     </div>
                                 </div>
-                                {/* 宽屏：最右图标按钮 */}
+                                {/* 宽屏：语言 + 最右图标按钮 */}
+                                <LangSwitcher />
                                 <UserAvatar className="hidden md:flex" profile={profile} onLogout={logout} />
 
                                 {/* 窄屏：三条杠 / 叉 */}
                                 <button
                                     type="button"
-                                    title={menuOpen ? "关闭菜单" : "菜单"}
-                                    aria-label={menuOpen ? "关闭菜单" : "菜单"}
+                                    title={menuOpen ? t("nav.closeMenu") : t("nav.menu")}
+                                    aria-label={menuOpen ? t("nav.closeMenu") : t("nav.menu")}
                                     aria-expanded={menuOpen}
                                     onClick={() => setMenuOpen(v => !v)}
                                     className="flex h-10 w-10 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-black/5 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-white/10 dark:hover:text-neutral-100 md:hidden">
@@ -99,22 +103,35 @@ export function Header() {
 
                                 {/* 窄屏抽屉 */}
                                 {menuOpen &&
-                                    <div className="absolute right-0 top-12 z-50 flex w-44 flex-col rounded-2xl bg-w py-2 shadow-xl shadow-color md:hidden">
+                                    <div className="absolute right-0 top-12 z-50 flex w-48 flex-col rounded-2xl bg-w py-2 shadow-xl shadow-color md:hidden">
                                         {items.map(item => (
                                             <Link key={item.herf} href={item.herf}
                                                 className={"px-4 py-3 text-sm font-medium duration-300 hover:text-theme " + (item.isActive(location) ? "text-theme" : "t-secondary")}>
-                                                {item.title}
+                                                {t(item.titleKey)}
                                             </Link>
                                         ))}
+                                        <div className="my-1 border-t border-neutral-100 dark:border-neutral-700" />
+                                        {/* 窄屏语言切换：铺成标签，比嵌套浮层好点 */}
+                                        <div className="flex flex-row flex-wrap gap-2 px-4 py-3">
+                                            {LANGS.map(l => (
+                                                <button key={l.code} type="button"
+                                                    onClick={() => setLang(l.code)}
+                                                    className={"rounded-lg px-2 py-1 text-xs duration-300 " + (l.code === lang
+                                                        ? "bg-theme text-white"
+                                                        : "bg-neutral-100 dark:bg-neutral-700 t-secondary")}>
+                                                    {l.name}
+                                                </button>
+                                            ))}
+                                        </div>
                                         <div className="my-1 border-t border-neutral-100 dark:border-neutral-700" />
                                         {profile?.avatar
                                             ? <button type="button" onClick={logout}
                                                 className="px-4 py-3 text-start text-sm font-medium t-secondary duration-300 hover:text-theme">
-                                                退出登录
+                                                {t("nav.logout")}
                                             </button>
                                             : <button type="button" onClick={() => window.location.href = `${oauth_url}`}
                                                 className="flex flex-row items-center px-4 py-3 text-start text-sm font-medium t-secondary duration-300 hover:text-theme">
-                                                <i className="ri-github-line mr-2"></i>Github 登录
+                                                <i className="ri-github-line mr-2"></i>{t("nav.login")}
                                             </button>}
                                     </div>
                                 }
@@ -137,16 +154,17 @@ function NavItem({ title, selected, herf }: { title: string, selected: boolean, 
 }
 
 function UserAvatar({ profile, className, onLogout }: { className?: string, profile?: Profile, onLogout: () => void }) {
+    const { t } = useI18n();
     return (<div className={"flex flex-row justify-end " + className}>
         {profile?.avatar ? <>
             <div className="relative">
                 <img src={profile.avatar} alt="Avatar" className="w-9 h-9 rounded-full" />
                 <div className="z-50 absolute left-0 top-0 w-9 h-9 opacity-0 hover:opacity-100 duration-300">
-                    <Icon label="退出登录" name="ri-logout-circle-line ri-xl" onClick={onLogout} hover={false} />
+                    <Icon label={t("nav.logout")} name="ri-logout-circle-line ri-xl" onClick={onLogout} hover={false} />
                 </div>
             </div>
         </> : <>
-            <button title="Github 登录" aria-label="Github 登录"
+            <button title={t("nav.login")} aria-label={t("nav.login")}
                 onClick={() => window.location.href = `${oauth_url}`}
                 className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-black/5 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-white/10 dark:hover:text-neutral-100">
                 <i className="ri-github-line ri-xl"></i>

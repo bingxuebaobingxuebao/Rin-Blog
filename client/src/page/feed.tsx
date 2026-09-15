@@ -1,4 +1,3 @@
-import { format } from "@astroimg/timeago";
 import MarkdownPreview from '@uiw/react-markdown-preview';
 import { useContext, useEffect, useRef, useState } from "react";
 import { Helmet } from 'react-helmet';
@@ -6,6 +5,7 @@ import { Icon, IconSmall } from "../components/icon";
 import { Waiting } from "../components/loading";
 import { Toc } from "../components/toc";
 import { client } from "../main";
+import { useI18n, tErrGlobal } from "../state/i18n";
 import { ProfileContext } from "../state/profile";
 import { headersWithAuth } from "../utils/auth";
 
@@ -29,6 +29,7 @@ type Feed = {
 
 export function FeedPage({ id }: { id: string }) {
     const profile = useContext(ProfileContext);
+    const { t, tErr, fmtAgo } = useI18n();
     const [feed, setFeed] = useState<Feed>()
     const [error, setError] = useState<string>()
     const [headImage, setHeadImage] = useState<string>()
@@ -78,10 +79,10 @@ export function FeedPage({ id }: { id: string }) {
                 <div className="w-full flex flex-col justify-center items-center">
                     <div className="wauto rounded-2xl bg-w m-2 p-6 items-center justify-center flex flex-col">
                         <h1 className="text-xl font-bold t-primary">
-                            {error}
+                            {tErr(error)}
                         </h1>
                         <button className="mt-2 bg-theme text-white px-4 py-2 rounded-full" onClick={() => window.location.href = '/'}>
-                            返回首页
+                            {t("feed.backHome")}
                         </button>
                     </div>
                 </div>
@@ -99,16 +100,16 @@ export function FeedPage({ id }: { id: string }) {
                                             {feed.title}
                                         </h1>
                                         {profile?.permission && <div className="flex-1 flex flex-col items-end justify-center">
-                                            <Icon label="编辑" name="ri-edit-2-line ri-lg" onClick={() => window.location.href = `/writing/${feed.id}`} />
+                                            <Icon label="Edit" name="ri-edit-2-line ri-lg" onClick={() => window.location.href = `/writing/${feed.id}`} />
                                         </div>}
                                     </div>
                                     <div className="my-2">
                                         <p className="text-gray-400 text-sm" title={new Date(feed.createdAt).toLocaleString()}>
-                                            发布于 {format(feed.createdAt)}
+                                            {t("time.published", fmtAgo(feed.createdAt))}
                                         </p>
                                         {feed.createdAt !== feed.updatedAt &&
                                             <p className="text-gray-400 text-sm" title={new Date(feed.updatedAt).toLocaleString()}>
-                                                更新于 {format(feed.updatedAt)}
+                                                {t("time.updated", fmtAgo(feed.updatedAt))}
                                             </p>
                                         }
                                     </div>
@@ -144,13 +145,9 @@ export function FeedPage({ id }: { id: string }) {
 }
 
 function CommentInput({ id, onRefresh, loggedIn }: { id: string, onRefresh: () => void, loggedIn: boolean }) {
+    const { t, tErr } = useI18n();
     const [content, setContent] = useState("")
     const [error, setError] = useState("")
-    function errorHumanize(error: string) {
-        if (error === 'Unauthorized') return '请先登录'
-        else if (error === 'Content is required') return '评论内容不能为空'
-        return error
-    }
     function submit() {
         client.feed.comment({ feed: id }).post(
             { content },
@@ -158,26 +155,26 @@ function CommentInput({ id, onRefresh, loggedIn }: { id: string, onRefresh: () =
                 headers: headersWithAuth()
             }).then(({ error }) => {
                 if (error) {
-                    setError(errorHumanize(error.value as string))
+                    setError(tErr(error.value as string))
                 } else {
                     setContent("")
                     setError("")
-                    alert("评论成功")
+                    alert(t("comment.success"))
                     onRefresh()
                 }
             })
     }
     return (
         <div className="mt-4 flex flex-col items-end">
-            <textarea id="comment" placeholder="说点什么吧"
+            <textarea id="comment" placeholder={t("comment.placeholder")}
                 className="w-full h-28 resize-y rounded-xl border border-neutral-200 dark:border-neutral-600 bg-transparent p-3 text-sm t-primary duration-300 focus:border-theme dark:focus:border-theme"
                 value={content} onChange={e => setContent(e.target.value)} />
             {!loggedIn &&
                 <p className="mt-2 self-start text-xs text-neutral-400">
-                    未登录也可以看，评论需要先点右上角用 Github 登录
+                    {t("comment.hint")}
                 </p>}
             <button className="mt-2 bg-theme text-white px-4 py-2 rounded-full text-sm duration-300 hover:opacity-90" onClick={submit}>
-                发表评论
+                {t("comment.submit")}
             </button>
             {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         </div>
@@ -199,6 +196,7 @@ type Comment = {
 }
 
 function Comments({ id, loggedIn }: { id: string, loggedIn: boolean }) {
+    const { t, tErr } = useI18n();
     const [comments, setComments] = useState<Comment[]>([])
     const [error, setError] = useState<string>()
     const ref = useRef("")
@@ -222,17 +220,17 @@ function Comments({ id, loggedIn }: { id: string, loggedIn: boolean }) {
     return (
         <section className="rounded-2xl bg-w t-primary m-2 p-6">
             <h2 className="text-lg font-bold">
-                评论
+                {t("comment.title")}
                 {comments.length > 0 && <span className="ml-2 text-sm font-normal text-neutral-400">{comments.length}</span>}
             </h2>
             <CommentInput id={id} onRefresh={loadComments} loggedIn={loggedIn} />
             {error &&
                 <div className="mt-4 flex flex-col items-center justify-center rounded-xl bg-neutral-50 dark:bg-neutral-800 p-6">
                     <h1 className="text-base font-bold t-primary">
-                        {error}
+                        {tErr(error)}
                     </h1>
                     <button className="mt-2 bg-theme text-white px-4 py-2 rounded-full text-sm" onClick={loadComments}>
-                        重新加载
+                        {t("common.reload")}
                     </button>
                 </div>
             }
@@ -249,16 +247,17 @@ function Comments({ id, loggedIn }: { id: string, loggedIn: boolean }) {
 
 function CommentItem({ comment, onRefresh }: { comment: Comment, onRefresh: () => void }) {
     const profile = useContext(ProfileContext);
+    const { t, fmtAgo } = useI18n();
     function deleteComment() {
         // 询问
-        if (!confirm("确定要删除这条评论吗？")) return
+        if (!confirm(t("comment.confirmDelete"))) return
         client.comment({ id: comment.id }).delete(null, {
             headers: headersWithAuth()
         }).then(({ error }) => {
             if (error) {
-                alert(error.value)
+                alert(tErrGlobal(error.value))
             } else {
-                alert("删除成功")
+                alert(t("comment.deleted"))
                 onRefresh()
             }
         })
@@ -273,7 +272,7 @@ function CommentItem({ comment, onRefresh }: { comment: Comment, onRefresh: () =
                     </span>
                     <div className="flex-1" />
                     <span title={new Date(comment.createdAt).toLocaleString()} className="text-gray-400 text-sm">
-                        {format(comment.createdAt)}
+                        {fmtAgo(comment.createdAt)}
                     </span>
                 </div>
                 <div className="flex flex-row items-start t-primary">
@@ -281,7 +280,7 @@ function CommentItem({ comment, onRefresh }: { comment: Comment, onRefresh: () =
                         {comment.content}
                     </p>
                     {(profile?.permission || profile?.id == comment.user.id) && <div className="flex flex-row">
-                        <IconSmall label="删除评论" name="ri-delete-bin-2-line ri-sm" onClick={deleteComment} />
+                        <IconSmall label="Delete" name="ri-delete-bin-2-line ri-sm" onClick={deleteComment} />
                     </div>
                     }
                 </div>

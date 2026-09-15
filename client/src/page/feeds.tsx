@@ -3,6 +3,7 @@ import { Link, useSearch } from "wouter"
 import { FeedCard } from "../components/feed_card"
 import { Waiting } from "../components/loading"
 import { client } from "../main"
+import { useI18n } from "../state/i18n"
 import { ProfileContext } from "../state/profile"
 import { headersWithAuth } from "../utils/auth"
 
@@ -32,6 +33,7 @@ type FeedsMap = {
 export function FeedsPage() {
     const query = new URLSearchParams(useSearch());
     const profile = useContext(ProfileContext);
+    const { t } = useI18n();
     const [listState, _setListState] = useState<FeedType>(query.get("type") as FeedType || 'normal')
     const [feeds, setFeeds] = useState<FeedsMap>({
         draft: { size: 0, data: [], hasNext: false },
@@ -75,19 +77,19 @@ export function FeedsPage() {
                 <div className="w-full flex flex-col justify-center items-center mb-8">
                     <div className="wauto text-start text-black dark:text-white p-4 text-4xl font-bold">
                         <p>
-                            {listState === 'draft' ? "草稿箱" : listState === 'normal' ? "文章" : "未列出"}
+                            {listState === 'draft' ? t("list.drafts") : listState === 'normal' ? t("list.articles") : t("list.unlisted")}
                         </p>
                         <div className="flex flex-row justify-between">
                             <p className="text-sm mt-4 text-neutral-500 font-normal">
-                                共有 {feeds[listState]?.size} 篇文章
+                                {t("list.count", feeds[listState]?.size ?? 0)}
                             </p>
                             {profile?.permission &&
                                 <div className="flex flex-row space-x-4">
                                     <Link href={listState === 'draft' ? '/?type=normal' : '/?type=draft'} className={`text-sm mt-4 text-neutral-500 font-normal ${listState === 'draft' ? "text-theme" : ""}`}>
-                                        草稿箱
+                                        {t("list.drafts")}
                                     </Link>
                                     <Link href={listState === 'unlisted' ? '/?type=normal' : '/?type=unlisted'} className={`text-sm mt-4 text-neutral-500 font-normal ${listState === 'unlisted' ? "text-theme" : ""}`}>
-                                        未列出
+                                        {t("list.unlisted")}
                                     </Link>
                                 </div>
                             }
@@ -100,14 +102,14 @@ export function FeedsPage() {
                         {page > 1 &&
                             <Link href={`/?type=${listState}&page=${(page - 1)}`}
                                 className={`text-sm font-normal rounded-full px-4 py-2 text-white bg-theme`}>
-                                上一页
+                                {t("list.prev")}
                             </Link>
                         }
                         <div className="flex-1" />
                         {feeds[listState]?.hasNext &&
                             <Link href={`/?type=${listState}&page=${(page + 1)}`}
                                 className={`text-sm font-normal rounded-full px-4 py-2 text-white bg-theme`}>
-                                下一页
+                                {t("list.next")}
                             </Link>
                         }
                     </div>

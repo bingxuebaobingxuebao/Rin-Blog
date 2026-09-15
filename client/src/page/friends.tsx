@@ -2,6 +2,7 @@ import { useContext, useEffect, useRef, useState } from "react"
 import { Input } from "../components/input"
 import { Waiting } from "../components/loading"
 import { client } from "../main"
+import { tErrGlobal, tGlobal, useI18n } from "../state/i18n"
 import { ProfileContext } from "../state/profile"
 import { shuffleArray } from "../utils/array"
 import { headersWithAuth } from "../utils/auth"
@@ -42,9 +43,9 @@ async function publish({ name, avatar, desc, url }: { name: string, avatar: stri
         headers: headersWithAuth()
     })
     if (error) {
-        alert(error.value)
+        alert(tErrGlobal(error.value))
     } else {
-        alert("创建成功")
+        alert(tGlobal("friends.created"))
         window.location.reload()
     }
 }
@@ -57,6 +58,7 @@ export function FriendsPage() {
     const [avatar, setAvatar] = useState("")
     const [url, setUrl] = useState("")
     const profile = useContext(ProfileContext);
+    const { t } = useI18n();
 
     const ref = useRef(false)
     useEffect(() => {
@@ -74,6 +76,14 @@ export function FriendsPage() {
     function publishButton() {
         publish({ name, desc, avatar, url })
     }
+    function errorHumanize(error: string) {
+        if (error === "certificate has expired" || error == "526") {
+            return t("friends.certExpired")
+        } else if (error.includes("Unable to connect") || error == "521") {
+            return t("friends.unreachable")
+        }
+        return error
+    }
     const friends_avaliable = friends?.filter(({ health }) => health.length === 0) || []
     shuffleArray(friends_avaliable)
     const friends_unavaliable = friends?.filter(({ health }) => health.length > 0) || []
@@ -85,15 +95,15 @@ export function FriendsPage() {
                     <>
                         <div className="wauto text-start py-4 text-4xl font-bold">
                             <p>
-                                朋友们
+                                {t("friends.title")}
                             </p>
                             <p className="text-sm mt-4 text-neutral-500 font-normal">
-                                梦想的同行者
+                                {t("friends.slogan")}
                             </p>
                         </div>
                         <div className="wauto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                             {friends_avaliable.map((friend) => (
-                                <Friend key={friend.id} friend={friend} />
+                                <Friend key={friend.id} friend={friend} errorHumanize={errorHumanize} />
                             ))}
                         </div>
                     </>
@@ -102,12 +112,12 @@ export function FriendsPage() {
                     <>
                         <div className="wauto text-start py-4">
                             <p className="text-sm mt-4 text-neutral-500 font-normal">
-                                暂时离开
+                                {t("friends.away")}
                             </p>
                         </div>
                         <div className="wauto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                             {friends_unavaliable.map((friend) => (
-                                <Friend key={friend.id} friend={friend} />
+                                <Friend key={friend.id} friend={friend} errorHumanize={errorHumanize} />
                             ))}
                         </div>
                     </>
@@ -116,15 +126,15 @@ export function FriendsPage() {
                     <div className="wauto t-primary flex text-start text-black text-2xl font-bold mt-8">
                         <div className="md:basis-1/2 bg-w rounded-xl p-4">
                             <p>
-                                创建友链
+                                {t("friends.create")}
                             </p>
                             <div className="text-sm mt-4 text-neutral-500 font-normal">
-                                <Input value={name} setValue={setName} placeholder="站点名称" />
-                                <Input value={desc} setValue={setDesc} placeholder="描述" className="mt-2" />
-                                <Input value={avatar} setValue={setAvatar} placeholder="头像地址" className="mt-2" />
-                                <Input value={url} setValue={setUrl} placeholder="地址" className="my-2" />
+                                <Input value={name} setValue={setName} placeholder={t("friends.name")} />
+                                <Input value={desc} setValue={setDesc} placeholder={t("friends.desc")} className="mt-2" />
+                                <Input value={avatar} setValue={setAvatar} placeholder={t("friends.avatar")} className="mt-2" />
+                                <Input value={url} setValue={setUrl} placeholder={t("friends.url")} className="my-2" />
                                 <div className='flex flex-row justify-center'>
-                                    <button onClick={publishButton} className='basis-1/2 bg-theme text-white py-4 rounded-full shadow-xl shadow-color'>创建</button>
+                                    <button onClick={publishButton} className='basis-1/2 bg-theme text-white py-4 rounded-full shadow-xl shadow-color'>{t("friends.submit")}</button>
                                 </div>
                             </div>
                         </div>
@@ -135,7 +145,7 @@ export function FriendsPage() {
     </>)
 }
 
-function Friend({ friend }: { friend: FriendItem }) {
+function Friend({ friend, errorHumanize }: { friend: FriendItem, errorHumanize: (error: string) => string }) {
     return (
         <>
             <div title={friend.health} onClick={() => window.open(friend.url)} className="bg-hover w-full bg-w rounded-xl p-4 flex flex-col justify-start items-center">
@@ -148,13 +158,4 @@ function Friend({ friend }: { friend: FriendItem }) {
             </div>
         </>
     )
-}
-
-function errorHumanize(error: string) {
-    if (error === "certificate has expired" || error == "526") {
-        return "证书已过期"
-    } else if (error.includes("Unable to connect") || error == "521") {
-        return "无法访问"
-    }
-    return error
 }
