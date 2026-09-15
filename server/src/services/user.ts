@@ -38,8 +38,12 @@ export const UserService = (db: DB, env: Env) => new Elysia({ aot: false })
                     avatar: string;
                     permission: number | null;
                 } = {
-                    openid: user.id,
-                    username: user.name,
+                    // `users.openid` is a TEXT column. Passing the raw number made the
+                    // lookup below fail every time (SQLite never matches text against a
+                    // number), so each login tried to insert a duplicate row instead.
+                    openid: String(user.id),
+                    // `users.username` is NOT NULL while GitHub's `name` is nullable.
+                    username: user.name || user.login || String(user.id),
                     avatar: user.avatar_url,
                     permission: null
                 };
