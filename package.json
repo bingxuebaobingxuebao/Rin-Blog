@@ -6,6 +6,7 @@
     "client"
   ],
   "private": true,
+  "packageManager": "bun@1.2.15",
   "scripts": {
     "dev": "turbo dev",
     "check": "turbo check",
