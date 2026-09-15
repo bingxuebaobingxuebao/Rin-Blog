@@ -82,10 +82,13 @@ export const UserService = (db: DB, env: Env) => new Elysia({ aot: false })
                 }
                 return `<html><head><meta http-equiv="refresh" content="0; url=${redirect_url}" /><head></html>`
             }, {
+                // GitHub appends extra query params to the OAuth callback (e.g. `iss`).
+                // TypeBox objects reject unknown keys by default, which made every
+                // login attempt fail with "Unexpected property /iss".
                 query: t.Object({
                     state: t.String(),
                     code: t.String(),
-                })
+                }, { additionalProperties: true })
             })
             .get('/profile', async ({ set, uid }) => {
                 if (!uid) {
