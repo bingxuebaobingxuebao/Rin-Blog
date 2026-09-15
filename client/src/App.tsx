@@ -32,6 +32,8 @@ function App() {
   }, [])
   return (
     <>
+      {/* 顶部主题色渐变（对齐 xeu.life）：通栏、固定、位于所有内容之下 */}
+      <div className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-64 bg-gradient-to-b from-theme/15 to-white/0 dark:from-theme/20 dark:to-transparent"></div>
       <ProfileContext.Provider value={profile}>
         <Switch>
           <RouteMe path="/">
