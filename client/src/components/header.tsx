@@ -22,15 +22,30 @@ const NAV_KEYS: NavEntry[] = [
     { titleKey: "nav.about", herf: "/about", isActive: l => l === "/about" },
 ]
 
+/**
+ * 滚动超过这个距离，导航栏就从「全透明」切成「毛玻璃」。
+ * 25 是照抄参考站 xeu.life 实测出来的拐点：scrollY=24 还透明，=25 就变毛玻璃。
+ */
+const NAV_BLUR_AT = 25
+
 export function Header() {
     const profile = useContext(ProfileContext);
     const [location, _] = useLocation();
     const [menuOpen, setMenuOpen] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
     const rightRef = useRef<HTMLDivElement>(null);
     const { t, lang, setLang } = useI18n();
 
     // 换页就把抽屉收起来
     useEffect(() => { setMenuOpen(false) }, [location]);
+
+    // 往下滚到 NAV_BLUR_AT 之后，给导航栏加一层毛玻璃（和参考站一致）
+    useEffect(() => {
+        const onScroll = () => setScrolled(window.scrollY >= NAV_BLUR_AT)
+        onScroll()
+        window.addEventListener("scroll", onScroll, { passive: true })
+        return () => window.removeEventListener("scroll", onScroll)
+    }, []);
 
     // 点抽屉外面任意位置也收起来
     useEffect(() => {
@@ -62,7 +77,12 @@ export function Header() {
             <div className="fixed inset-x-0 top-0 z-40">
                 <div className="w-screen">
                     <div className="w-full">
-                        <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
+                        {/* 类名与参考站一一对应：静止 bg-transparent backdrop-blur-none，
+                            滚动后 bg-white/20 backdrop-blur-xl（深色模式 dark:bg-white/[0.03]）。
+                            参考站没有过渡，所以这里也不加 transition，保证切换手感一致。 */}
+                        <div className={"flex w-full items-center justify-between gap-3 px-4 py-3 " + (scrolled
+                            ? "bg-white/20 backdrop-blur-xl dark:bg-white/[0.03]"
+                            : "bg-transparent backdrop-blur-none")}>
                             <Link href="/" className="min-w-0 flex flex-row items-center shrink-0">
                                 <span className="relative inline-flex shrink-0 items-center justify-center overflow-hidden h-10 w-10 rounded-full">
                                     <img src={process.env.AVATAR} alt={process.env.NAME} className="absolute inset-0 h-full w-full object-cover" />
