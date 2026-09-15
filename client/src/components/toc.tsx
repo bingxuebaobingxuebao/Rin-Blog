@@ -33,7 +33,9 @@ export function Toc({ container = "article .wmde-markdown", deps }: { container?
         setItems(list)
     }, [container, deps])
 
-    // 滚动高亮：找出最后一个已经滚过视口上沿的标题
+    // 滚动高亮。
+    // 阈值要和 index.css 里标题的 scroll-margin-top（5.5rem=88px）配合：
+    // 跳转后标题正好停在 88px 处，阈值必须 > 88 才不会「点了高亮还留在上一条」。
     useEffect(() => {
         if (items.length === 0) return
         let raf = 0
@@ -45,7 +47,7 @@ export function Toc({ container = "article .wmde-markdown", deps }: { container?
                 for (const it of items) {
                     const el = document.getElementById(it.id)
                     if (!el) continue
-                    if (el.getBoundingClientRect().top <= 120) current = it.id
+                    if (el.getBoundingClientRect().top <= 100) current = it.id
                 }
                 setActive(current)
             })
@@ -72,6 +74,7 @@ export function Toc({ container = "article .wmde-markdown", deps }: { container?
                             <li key={it.id}
                                 title={it.text}
                                 onClick={() => {
+                                    setActive(it.id)
                                     document.getElementById(it.id)?.scrollIntoView({ behavior: "smooth", block: "start" })
                                 }}
                                 style={{ marginLeft: Math.max(0, it.level - base) * 10 }}
