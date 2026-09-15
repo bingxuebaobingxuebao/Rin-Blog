@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useI18n } from "../state/i18n";
 
 type TocItem = {
     id: string;
@@ -14,6 +15,7 @@ type TocItem = {
  * 自己再实现一套 slug 很容易和它对不上。
  */
 export function Toc({ container = "article .wmde-markdown", deps }: { container?: string, deps?: any }) {
+    const { t } = useI18n()
     const [items, setItems] = useState<TocItem[]>([])
     const [active, setActive] = useState<string>("")
 
@@ -73,7 +75,7 @@ export function Toc({ container = "article .wmde-markdown", deps }: { container?
         <div className="hidden lg:block w-64 xl:w-80 shrink-0">
             <div className="sticky top-20">
                 <div className="rounded-2xl bg-w py-4 px-4 t-primary">
-                    <h2 className="text-lg font-bold">目录</h2>
+                    <h2 className="text-lg font-bold">{t("toc.title")}</h2>
                     <ul className="mt-2 max-h-[calc(100vh-10rem)] overflow-auto" style={{ scrollbarWidth: "none" }}>
                         {items.map(it => (
                             <li key={it.id}

@@ -85,6 +85,7 @@ const zhCN: Dict = {
 
     "feed.backHome": "返回首页",
     "common.reload": "重新加载",
+    "toc.title": "目录",
 
     "comment.title": "评论",
     "comment.placeholder": "说点什么吧",
@@ -167,6 +168,7 @@ const zhTW: Dict = {
 
     "feed.backHome": "返回首頁",
     "common.reload": "重新載入",
+    "toc.title": "目錄",
 
     "comment.title": "評論",
     "comment.placeholder": "說點什麼吧",
@@ -249,6 +251,7 @@ const en: Dict = {
 
     "feed.backHome": "Back to home",
     "common.reload": "Reload",
+    "toc.title": "Contents",
 
     "comment.title": "Comments",
     "comment.placeholder": "Say something…",
@@ -331,6 +334,7 @@ const ja: Dict = {
 
     "feed.backHome": "ホームへ戻る",
     "common.reload": "再読み込み",
+    "toc.title": "目次",
 
     "comment.title": "コメント",
     "comment.placeholder": "何か書いてください",
