@@ -23,16 +23,41 @@ jobs:
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.2.15
 
-      - name: Deploy
-        env: # Or as an environment variable
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID  }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN  }}
+      - name: Install dependencies
+        run: |
+          cd Rin/
+          bun i
+
+      - name: Deploy Worker and run D1 migrations
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           DB_NAME: ${{ vars.DB_NAME }}
           WORKER_NAME: ${{ vars.WORKER_NAME }}
           FRONTEND_URL: ${{ vars.FRONTEND_URL }}
           S3_FOLDER: ${{ vars.S3_FOLDER }}
         run: |
           cd Rin/
-          bun i
           bun scripts/migrator.ts
+
+      - name: Build frontend
+        env:
+          API_URL: ${{ vars.API_URL }}
+          AVATAR: ${{ vars.AVATAR }}
+          NAME: ${{ vars.NAME }}
+          DESCRIPTION: ${{ vars.DESCRIPTION }}
+          PAGE_SIZE: ${{ vars.PAGE_SIZE }}
+        run: |
+          cd Rin/
+          bun b
+
+      - name: Deploy frontend to Cloudflare Pages
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          cd Rin/
+          bunx wrangler pages deploy client/dist --project-name=${{ vars.PAGES_PROJECT }} --branch=main
