@@ -72,11 +72,14 @@ export function Toc({ container = "article .wmde-markdown", deps }: { container?
     const base = Math.min(...items.map(i => i.level))
 
     return (
-        <div className="hidden lg:block w-64 xl:w-80 shrink-0">
-            <div className="sticky top-20">
+        // 关键：外层那一行用了 `items-start`，会把本容器压成「内容高度」，
+        // 里面的 `sticky` 就没有可粘的行程、会跟着页面一起滚走。
+        // 加 `self-stretch` 单独把本项拉满整行高度（不动左列），sticky 才真正生效。
+        <div className="hidden lg:block w-64 xl:w-80 shrink-0 self-stretch">
+            <div className="sticky top-[5.5rem]">
                 <div className="rounded-2xl bg-w py-4 px-4 t-primary">
                     <h2 className="text-lg font-bold">{t("toc.title")}</h2>
-                    <ul className="mt-2 max-h-[calc(100vh-10rem)] overflow-auto" style={{ scrollbarWidth: "none" }}>
+                    <ul className="mt-2 max-h-[calc(100vh-10.25rem)] overflow-auto" style={{ scrollbarWidth: "none" }}>
                         {items.map(it => (
                             <li key={it.id}
                                 title={it.text}
