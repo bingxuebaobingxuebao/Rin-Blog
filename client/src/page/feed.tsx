@@ -4,6 +4,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { Helmet } from 'react-helmet';
 import { Icon, IconSmall } from "../components/icon";
 import { Waiting } from "../components/loading";
+import { Toc } from "../components/toc";
 import { client } from "../main";
 import { ProfileContext } from "../state/profile";
 import { headersWithAuth } from "../utils/auth";
@@ -73,69 +74,76 @@ export function FeedPage({ id }: { id: string }) {
                     <meta name="description" content={feed.content.length > 200 ? feed.content.substring(0, 200) : feed.content} />
                 </Helmet>
             }
-            <div className="w-full flex flex-col justify-center items-center">
-                {error &&
-                    <>
-                        <div className="flex flex-col wauto rounded-2xl bg-w m-2 p-6 items-center justify-center">
-                            <h1 className="text-xl font-bold t-primary">
-                                {error}
-                            </h1>
-                            <button className="mt-2 bg-theme text-white px-4 py-2 rounded-full" onClick={() => window.location.href = '/'}>
-                                返回首页
-                            </button>
-                        </div>
-                    </>
-                }
-                {feed &&
-                    <main className="wauto rounded-2xl bg-w m-2 p-6">
-                        <article aria-label="正文">
-                            <div className="flex flex-row items-center">
-                                <h1 className="text-xl font-bold t-primary">
-                                    {feed.title}
-                                </h1>
-                                {profile?.permission && <div className="flex-1 flex flex-col items-end justify-center">
-                                    <Icon label="编辑" name="ri-edit-2-line ri-lg" onClick={() => window.location.href = `/writing/${feed.id}`} />
-                                </div>}
-                            </div>
-                            <div className="my-2">
-                                <p className="text-gray-400 text-sm" title={new Date(feed.createdAt).toLocaleString()}>
-                                    发布于 {format(feed.createdAt)}
-                                </p>
-                                {feed.createdAt !== feed.updatedAt &&
-                                    <p className="text-gray-400 text-sm" title={new Date(feed.updatedAt).toLocaleString()}>
-                                        更新于 {format(feed.updatedAt)}
-                                    </p>
-                                }
-                            </div>
-                            <MarkdownPreview source={feed.content} />
-                            {feed.hashtags.length > 0 &&
-                                <div className="mt-2 flex flex-row space-x-2">
-                                    {feed.hashtags.map(({ name }, index) => (
-                                        <div key={index} className="bg-neutral-100 py-1 px-2 rounded-lg">
-                                            {name}
+            {error &&
+                <div className="w-full flex flex-col justify-center items-center">
+                    <div className="wauto rounded-2xl bg-w m-2 p-6 items-center justify-center flex flex-col">
+                        <h1 className="text-xl font-bold t-primary">
+                            {error}
+                        </h1>
+                        <button className="mt-2 bg-theme text-white px-4 py-2 rounded-full" onClick={() => window.location.href = '/'}>
+                            返回首页
+                        </button>
+                    </div>
+                </div>
+            }
+            {feed &&
+                <div className="w-full flex flex-col justify-center items-center">
+                    {/* 正文 + 右侧目录：结构对齐 xeu.life（左右留白对称，目录 sticky） */}
+                    <div className="w-full flex flex-row justify-center items-start">
+                        <div className="hidden 2xl:block 2xl:w-64 shrink-0"></div>
+                        <div className="w-full md:w-11/12 lg:flex-1 lg:min-w-0">
+                            <main className="rounded-2xl bg-w m-2 p-6">
+                                <article aria-label="正文">
+                                    <div className="flex flex-row items-center">
+                                        <h1 className="text-xl font-bold t-primary">
+                                            {feed.title}
+                                        </h1>
+                                        {profile?.permission && <div className="flex-1 flex flex-col items-end justify-center">
+                                            <Icon label="编辑" name="ri-edit-2-line ri-lg" onClick={() => window.location.href = `/writing/${feed.id}`} />
+                                        </div>}
+                                    </div>
+                                    <div className="my-2">
+                                        <p className="text-gray-400 text-sm" title={new Date(feed.createdAt).toLocaleString()}>
+                                            发布于 {format(feed.createdAt)}
+                                        </p>
+                                        {feed.createdAt !== feed.updatedAt &&
+                                            <p className="text-gray-400 text-sm" title={new Date(feed.updatedAt).toLocaleString()}>
+                                                更新于 {format(feed.updatedAt)}
+                                            </p>
+                                        }
+                                    </div>
+                                    <MarkdownPreview source={feed.content} />
+                                    {feed.hashtags.length > 0 &&
+                                        <div className="mt-2 flex flex-row flex-wrap">
+                                            {feed.hashtags.map(({ name }, index) => (
+                                                <div key={index} className="bg-neutral-100 dark:bg-neutral-600 dark:text-neutral-300 py-1 px-2 m-1 rounded-lg">
+                                                    {name}
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
-                            }
-                            <div className="mt-2 flex flex-row items-center">
-                                <img src={feed.user.avatar || '/avatar.png'} className="w-8 h-8 rounded-full" />
-                                <div className="ml-2">
-                                    <span className="text-gray-400 text-sm">
-                                        {feed.user.username}
-                                    </span>
-                                </div>
-                            </div>
-                        </article>
-                    </main>
-                }
-                {feed && <Comments id={id} />}
-                <div className="h-16" />
-            </div>
+                                    }
+                                    <div className="mt-2 flex flex-row items-center">
+                                        <img src={feed.user.avatar || '/avatar.png'} className="w-8 h-8 rounded-full" />
+                                        <div className="ml-2">
+                                            <span className="text-gray-400 text-sm">
+                                                {feed.user.username}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </article>
+                            </main>
+                            <Comments id={id} loggedIn={!!profile} />
+                        </div>
+                        <Toc deps={feed.id} />
+                    </div>
+                    <div className="h-16" />
+                </div>
+            }
         </Waiting>
     )
 }
 
-function CommentInput({ id, onRefresh }: { id: string, onRefresh: () => void }) {
+function CommentInput({ id, onRefresh, loggedIn }: { id: string, onRefresh: () => void, loggedIn: boolean }) {
     const [content, setContent] = useState("")
     const [error, setError] = useState("")
     function errorHumanize(error: string) {
@@ -160,20 +168,21 @@ function CommentInput({ id, onRefresh }: { id: string, onRefresh: () => void }) 
             })
     }
     return (
-        <div className="wauto rounded-2xl bg-w t-primary m-2 p-6 items-end flex flex-col">
-            <div className="flex flex-col w-full items-start space-y-4">
-                <label htmlFor="comment">评论</label>
-                <textarea id="comment" placeholder="说点什么吧" className="bg-w w-full h-24 rounded-lg" value={content} onChange={e => setContent(e.target.value)} />
-            </div>
-            <button className="mt-2 bg-theme text-white px-4 py-2 rounded-full" onClick={submit}>
+        <div className="mt-4 flex flex-col items-end">
+            <textarea id="comment" placeholder="说点什么吧"
+                className="w-full h-28 resize-y rounded-xl border border-neutral-200 dark:border-neutral-600 bg-transparent p-3 text-sm t-primary duration-300 focus:border-theme dark:focus:border-theme"
+                value={content} onChange={e => setContent(e.target.value)} />
+            {!loggedIn &&
+                <p className="mt-2 self-start text-xs text-neutral-400">
+                    未登录也可以看，评论需要先点右上角用 Github 登录
+                </p>}
+            <button className="mt-2 bg-theme text-white px-4 py-2 rounded-full text-sm duration-300 hover:opacity-90" onClick={submit}>
                 发表评论
             </button>
             {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         </div>
     )
 }
-
-
 
 
 type Comment = {
@@ -189,7 +198,7 @@ type Comment = {
     };
 }
 
-function Comments({ id }: { id: string }) {
+function Comments({ id, loggedIn }: { id: string, loggedIn: boolean }) {
     const [comments, setComments] = useState<Comment[]>([])
     const [error, setError] = useState<string>()
     const ref = useRef("")
@@ -211,30 +220,30 @@ function Comments({ id }: { id: string }) {
         ref.current = id
     }, [id])
     return (
-        <>
-            <div className="w-full flex flex-col justify-center items-center">
-                <CommentInput id={id} onRefresh={loadComments} />
-                {error &&
-                    <>
-                        <div className="flex flex-col wauto rounded-2xl bg-w t-primary m-2 p-6 items-center justify-center">
-                            <h1 className="text-xl font-bold t-primary">
-                                {error}
-                            </h1>
-                            <button className="mt-2 bg-theme text-white px-4 py-2 rounded-full" onClick={loadComments}>
-                                重新加载
-                            </button>
-                        </div>
-                    </>
-                }
-                {comments.length > 0 &&
-                    <div className="wauto rounded-2xl bg-w m-2 p-2 space-y-2">
-                        {comments.map(comment => (
-                            <CommentItem key={comment.id} comment={comment} onRefresh={loadComments} />
-                        ))}
-                    </div>
-                }
-            </div>
-        </>
+        <section className="rounded-2xl bg-w t-primary m-2 p-6">
+            <h2 className="text-lg font-bold">
+                评论
+                {comments.length > 0 && <span className="ml-2 text-sm font-normal text-neutral-400">{comments.length}</span>}
+            </h2>
+            <CommentInput id={id} onRefresh={loadComments} loggedIn={loggedIn} />
+            {error &&
+                <div className="mt-4 flex flex-col items-center justify-center rounded-xl bg-neutral-50 dark:bg-neutral-800 p-6">
+                    <h1 className="text-base font-bold t-primary">
+                        {error}
+                    </h1>
+                    <button className="mt-2 bg-theme text-white px-4 py-2 rounded-full text-sm" onClick={loadComments}>
+                        重新加载
+                    </button>
+                </div>
+            }
+            {comments.length > 0 &&
+                <div className="mt-4 space-y-2">
+                    {comments.map(comment => (
+                        <CommentItem key={comment.id} comment={comment} onRefresh={loadComments} />
+                    ))}
+                </div>
+            }
+        </section>
     )
 }
 
@@ -255,7 +264,7 @@ function CommentItem({ comment, onRefresh }: { comment: Comment, onRefresh: () =
         })
     }
     return (
-        <div className="flex flex-row items-start bg-hover p-2 rounded-xl">
+        <div className="flex flex-row items-start rounded-xl bg-neutral-50 dark:bg-neutral-800 p-3">
             <img src={comment.user.avatar || ''} className="w-8 h-8 rounded-full" />
             <div className="flex flex-col w-full ml-2">
                 <div className="flex flex-row">
@@ -268,7 +277,7 @@ function CommentItem({ comment, onRefresh }: { comment: Comment, onRefresh: () =
                     </span>
                 </div>
                 <div className="flex flex-row items-start t-primary">
-                    <p className="flex-1">
+                    <p className="flex-1 text-sm break-words">
                         {comment.content}
                     </p>
                     {(profile?.permission || profile?.id == comment.user.id) && <div className="flex flex-row">

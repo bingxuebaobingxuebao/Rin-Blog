@@ -53,6 +53,16 @@ ul {
   @apply w-full md:w-7/12 lg:w-8/12 xl:w-10/12 2xl:w-full duration-300;
 }
 
+/* 右侧「目录」和标题锚点跳转时，给固定导航栏留出高度，别让标题被挡住 */
+.wmde-markdown h1,
+.wmde-markdown h2,
+.wmde-markdown h3,
+.wmde-markdown h4,
+.wmde-markdown h5,
+.wmde-markdown h6 {
+  scroll-margin-top: 5.5rem;
+}
+
 .markdown-alert {
   @apply !border-l-0 border-0 rounded-lg !py-4 my-4 !px-4 !leading-snug;
 }
