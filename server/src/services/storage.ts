@@ -11,6 +11,11 @@ function buf2hex(buffer: ArrayBuffer) {
         .join('');
 }
 
+const uploadBody = t.Object({
+    key: t.String(),
+    file: t.File()
+})
+
 export const StorageService = (db: DB, env: Env) => {
     const region = env.S3_REGION;
     const endpoint = env.S3_ENDPOINT;
@@ -39,36 +44,41 @@ export const StorageService = (db: DB, env: Env) => {
             secretAccessKey: secretAccessKey
         }
     });
+
+    // The group root is registered on both `/` and `/index` because Edens Treaty
+    // serialises a group root route to `<group>/index`.
+    const uploadFile = async ({ uid, set, body: { key, file } }: any) => {
+        if (!uid) {
+            set.status = 401;
+            return 'Unauthorized';
+        }
+        const suffix = key.includes(".") ? key.split('.').pop() : "";
+        const hashArray = await crypto.subtle.digest(
+            { name: 'SHA-1' },
+            await file.arrayBuffer()
+        );
+        const hash = buf2hex(hashArray)
+        const hashkey = path.join(folder, hash + "." + suffix);
+        try {
+            const response = await s3.send(new PutObjectCommand({ Bucket: bucket, Key: hashkey, Body: file }))
+            console.info(response);
+            return `${accessHost}/${hashkey}`
+        } catch (e: any) {
+            set.status = 400;
+            console.error(e.message)
+            return e.message
+        }
+    }
+
     return new Elysia({ aot: false })
         .use(setup(db, env))
         .group('/storage', (group) =>
             group
-                .post('/', async ({ uid, set, body: { key, file } }) => {
-                    if (!uid) {
-                        set.status = 401;
-                        return 'Unauthorized';
-                    }
-                    const suffix = key.includes(".") ? key.split('.').pop() : "";
-                    const hashArray = await crypto.subtle.digest(
-                        { name: 'SHA-1' },
-                        await file.arrayBuffer()
-                    );
-                    const hash = buf2hex(hashArray)
-                    const hashkey = path.join(folder, hash + "." + suffix);
-                    try {
-                        const response = await s3.send(new PutObjectCommand({ Bucket: bucket, Key: hashkey, Body: file }))
-                        console.info(response);
-                        return `${accessHost}/${hashkey}`
-                    } catch (e: any) {
-                        set.status = 400;
-                        console.error(e.message)
-                        return e.message
-                    }
-                }, {
-                    body: t.Object({
-                        key: t.String(),
-                        file: t.File()
-                    })
+                .post('/', uploadFile, {
+                    body: uploadBody
+                })
+                .post('/index', uploadFile, {
+                    body: uploadBody
                 })
         );
 }
