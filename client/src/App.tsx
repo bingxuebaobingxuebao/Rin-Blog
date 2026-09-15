@@ -8,6 +8,8 @@ import { CallbackPage } from './page/callback'
 import { FeedPage } from './page/feed'
 import { FeedsPage } from './page/feeds'
 import { FriendsPage } from './page/friends'
+import { TagPage } from './page/tag'
+import { TagsPage } from './page/tags'
 import { WritingPage } from './page/writing'
 import { Profile, ProfileContext } from './state/profile'
 import { headersWithAuth } from './utils/auth'
@@ -49,6 +51,14 @@ function App() {
           </RouteMe>
           <RouteMe path="/friends">
             <FriendsPage />
+          </RouteMe>
+
+          {/* 标签页必须放在 /:alias 兜底路由之前 */}
+          <RouteMe path="/tags">
+            <TagsPage />
+          </RouteMe>
+          <RouteMe path="/tag/:name">
+            {params => <TagPage name={params.name} />}
           </RouteMe>
 
           <RouteMe path="/writing/:id">
